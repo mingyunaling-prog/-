@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚌 バス1号車 乗車チェックリスト</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f1ea;
+  --surface: #ffffff;
+  --surface2: #ede9df;
+  --ink: #1c1a15;
+  --ink2: #7a7060;
+  --border: #ddd8cc;
+  --accent: #d4500a;
+  --checked-bg: #f0f0f0;
+  --checked-text: #aaa;
+  --checked-border: #d0ccc4;
+  --r: 11px;
+  --shadow: 0 1px 8px rgba(0,0,0,0.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* HEADER */
+.header {
+  background: var(--ink);
+  padding: 16px 16px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 3px 20px rgba(0,0,0,0.3);
+}
+.header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.bus-icon { font-size: 1.8rem; line-height: 1; }
+.header h1 { font-size: 1.1rem; font-weight: 900; color: #f4f1ea; }
+.header .sub { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: #8a8070; margin-top: 2px; }
+.accent-bar { height: 3px; background: var(--accent); border-radius: 999px; margin-bottom: 10px; }
+.prog-wrap { }
+.prog-nums {
+  display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px;
+}
+.prog-nums .lbl { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: #8a8070; }
+.prog-nums .frac { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: #f4f1ea; }
+.prog-nums .frac b { font-size: 1.15rem; color: var(--accent); }
+.prog-track { height: 5px; background: #2e2b25; border-radius: 999px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; width: 0%; }
+
+/* MODE BAR */
+.mode-bar {
+  display: flex; gap: 6px; padding: 10px 16px;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.mode-btn {
+  padding: 7px 16px; border: 1.5px solid var(--border); border-radius: 999px;
+  background: var(--surface); color: var(--ink2);
+  font-family: 'Noto Sans JP', sans-serif; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.mode-btn.active { background: var(--ink); color: #f4f1ea; border-color: var(--ink); }
+
+/* CHECK VIEW */
+.check-view { padding: 12px 16px; }
+.section-head {
+  font-family: 'DM Mono', monospace; font-size: 0.6rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink2); margin-bottom: 6px; padding-left: 4px;
+}
+.col-header {
+  display: grid; grid-template-columns: 26px 1fr 1fr 34px;
+  gap: 8px; padding: 3px 12px; margin-bottom: 4px;
+}
+.col-header span { font-family: 'DM Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); }
+.check-list { display: flex; flex-direction: column; gap: 5px; }
+.check-item {
+  display: grid; grid-template-columns: 26px 1fr 1fr 34px;
+  align-items: center; gap: 8px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 11px 12px;
+  cursor: pointer; transition: all 0.2s;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow);
+}
+.check-item:active { transform: scale(0.982); }
+.check-item.checked {
+  background: var(--checked-bg); border-color: var(--checked-border);
+  opacity: 0.75;
+}
+.chk-circle {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--border); background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; color: transparent; flex-shrink: 0;
+  transition: all 0.18s;
+}
+.check-item.checked .chk-circle {
+  background: var(--accent); border-color: var(--accent); color: white;
+}
+.chk-group {
+  font-size: 0.8rem; color: var(--ink2); font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chk-name {
+  font-size: 0.9rem; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.check-item.checked .chk-group,
+.check-item.checked .chk-name { color: var(--checked-text); text-decoration: line-through; }
+.chk-time {
+  font-family: 'DM Mono', monospace; font-size: 0.58rem;
+  color: var(--ink2); text-align: right; line-height: 1.4;
+}
+.check-item.checked .chk-time { color: var(--checked-text); }
+
+.checked-section { margin-top: 14px; }
+.checked-divider {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 0 2px;
+}
+.checked-divider::before, .checked-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.checked-divider span {
+  font-family: 'DM Mono', monospace; font-size: 0.6rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--ink2); white-space: nowrap;
+  background: var(--bg); padding: 0 4px;
+}
+
+/* ADMIN VIEW */
+.admin-view { padding: 16px; display: none; }
+.field-lbl {
+  font-family: 'DM Mono', monospace; font-size: 0.62rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink2); margin-bottom: 6px; display: block;
+}
+.txt {
+  width: 100%; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r); color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif; font-size: 0.88rem;
+  padding: 10px 12px; outline: none; transition: border-color 0.2s; margin-bottom: 10px;
+}
+.txt:focus { border-color: var(--ink); }
+.row { display: flex; gap: 6px; margin-bottom: 16px; }
+.row .txt { margin-bottom: 0; flex: 1; }
+.add-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin-bottom: 16px; }
+.add-grid .txt { margin-bottom: 0; }
+.btn {
+  padding: 10px 14px; border: none; border-radius: var(--r);
+  font-family: 'Noto Sans JP', sans-serif; font-weight: 700; font-size: 0.82rem;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.btn-ink { background: var(--ink); color: #f4f1ea; }
+.btn-ink:hover { opacity: 0.85; }
+.btn-accent { background: var(--accent); color: white; }
+.btn-accent:hover { filter: brightness(0.9); }
+.btn-del {
+  background: #fde8e5; color: #c0392b; border: 1px solid #f5c6c0;
+  padding: 6px 10px; font-size: 0.72rem;
+}
+.person-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
+.person-row {
+  display: grid; grid-template-columns: 20px 1fr 1fr auto;
+  align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px;
+}
+.person-row .num { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--ink2); }
+.person-row .grp { font-size: 0.78rem; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person-row .nm { font-size: 0.88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sep { height: 1px; background: var(--border); margin: 18px 0; }
+.share-box {
+  background: var(--surface); border: 1.5px solid var(--ink);
+  border-radius: var(--r); padding: 14px; margin-bottom: 10px;
+}
+.share-box p { font-size: 0.78rem; color: var(--ink2); margin-bottom: 10px; line-height: 1.7; }
+.share-url {
+  background: var(--surface2); border-radius: 6px; padding: 10px 12px;
+  font-family: 'DM Mono', monospace; font-size: 0.58rem; color: var(--accent);
+  word-break: break-all; margin-bottom: 10px; border: 1px solid var(--border);
+  min-height: 38px; line-height: 1.6;
+}
+.bulk-box {
+  background: var(--surface); border: 1.5px solid var(--accent);
+  border-radius: var(--r); padding: 14px; margin-bottom: 4px;
+}
+.bulk-hint {
+  font-size: 0.78rem; color: var(--ink2); margin-bottom: 8px; line-height: 1.7;
+}
+.hint-tag {
+  display: inline-block; background: var(--accent); color: white;
+  font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 500;
+  padding: 1px 7px; border-radius: 999px; margin-right: 6px; vertical-align: middle;
+}
+.bulk-hint code {
+  background: var(--surface2); border-radius: 4px; padding: 1px 6px;
+  font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--ink);
+}
+.bulk-example {
+  background: var(--surface2); border-radius: 7px;
+  padding: 8px 12px; margin-bottom: 10px;
+  font-family: 'DM Mono', monospace; font-size: 0.7rem;
+  color: var(--ink2); line-height: 1.8;
+  border-left: 3px solid var(--accent);
+}
+.bulk-textarea {
+  width: 100%; height: 140px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 10px 12px;
+  font-family: 'DM Mono', monospace; font-size: 0.78rem;
+  color: var(--ink); resize: vertical; outline: none;
+  line-height: 1.7; margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.bulk-textarea:focus { border-color: var(--accent); }
+.bulk-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.bulk-preview-count {
+  font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--ink2);
+}
+.bulk-preview-count b { color: var(--accent); font-size: 0.9rem; }
+  width: 100%; background: transparent; border: 1.5px solid #c0392b; color: #c0392b;
+  padding: 10px; font-size: 0.8rem; border-radius: var(--r);
+  font-family: 'Noto Sans JP', sans-serif; font-weight: 700; cursor: pointer;
+  margin-top: 8px; transition: all 0.15s;
+}
+.btn-reset:hover { background: #fde8e5; }
+.empty { text-align: center; padding: 30px 16px; color: var(--ink2); font-size: 0.82rem; line-height: 2; }
+.empty .ico { font-size: 2rem; display: block; margin-bottom: 8px; }
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--ink); color: #f4f1ea;
+  padding: 9px 22px; border-radius: 999px; font-size: 0.8rem;
+  opacity: 0; transition: all 0.28s; pointer-events: none;
+  white-space: nowrap; z-index: 999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div class="bus-icon">🚌</div>
+    <div>
+      <h1 id="mainTitle">バス1号車 乗車チェックリスト</h1>
+      <div class="sub" id="headerSub">読み込み中...</div>
+    </div>
+  </div>
+  <div class="accent-bar"></div>
+  <div class="prog-wrap">
+    <div class="prog-nums">
+      <span class="lbl">乗車済み</span>
+      <span class="frac"><b id="checkedN">0</b> / <span id="totalN">0</span> 名</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+  </div>
+</div>
+
+<div class="mode-bar">
+  <button class="mode-btn active" id="btnCheck" onclick="setMode('check')">✅ チェック</button>
+  <button class="mode-btn" id="btnAdmin" onclick="setMode('admin')">⚙️ 名簿管理</button>
+</div>
+
+<!-- CHECK VIEW -->
+<div class="check-view" id="checkView">
+  <div class="col-header">
+    <span></span><span>グループ</span><span>名前</span><span>時刻</span>
+  </div>
+  <div id="pendingList" class="check-list"></div>
+  <div id="checkedSection" class="checked-section" style="display:none;">
+    <div class="checked-divider"><span>乗車済み</span></div>
+    <div id="checkedList" class="check-list"></div>
+  </div>
+</div>
+
+<!-- ADMIN VIEW -->
+<div class="admin-view" id="adminView">
+  <label class="field-lbl">イベント全体のタイトル</label>
+  <div class="row">
+    <input class="txt" id="titleInput" type="text" placeholder="例：〇〇社員旅行 2025">
+    <button class="btn btn-ink" onclick="saveTitle()">保存</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <label class="field-lbl">一括入力（コピペ）</label>
+  <div class="bulk-box">
+    <div class="bulk-hint">
+      <span class="hint-tag">書き方</span>
+      <code>グループ名,名前</code> を1行に1人ずつ貼り付けてください。<br>
+      グループ名がない場合は名前だけでもOKです。
+    </div>
+    <div class="bulk-example">例）<br>Aチーム,山田 太郎<br>Aチーム,鈴木 花子<br>Bチーム,田中 一郎</div>
+    <textarea class="bulk-textarea" id="bulkInput" placeholder="ここにコピペしてください&#10;グループ名,名前&#10;グループ名,名前&#10;..."></textarea>
+    <div class="bulk-actions">
+      <span class="bulk-preview-count" id="bulkPreviewCount"></span>
+      <button class="btn btn-accent" onclick="bulkImport()">⬆️ 一括登録する</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <label class="field-lbl">1人ずつ追加</label>
+  <div class="add-grid">
+    <input class="txt" id="groupInput" type="text" placeholder="グループ名">
+    <input class="txt" id="nameInput" type="text" placeholder="名前">
+    <button class="btn btn-ink" onclick="addPerson()">追加</button>
+  </div>
+  <div class="person-list" id="personList"></div>
+
+  <div class="sep"></div>
+
+  <label class="field-lbl">幹事にURLを共有</label>
+  <div class="share-box">
+    <p>このURLをLINEやメールで幹事に送ってください。<br>名簿データはURLに含まれており、幹事はブラウザで開くだけで使えます。</p>
+    <div class="share-url" id="shareUrl">（参加者を追加するとURLが表示されます）</div>
+    <button class="btn btn-accent" style="width:100%;padding:11px;font-size:0.85rem;" onclick="copyUrl()">📋 URLをコピーする</button>
+  </div>
+  <button class="btn-reset" onclick="resetChecks()">チェックをすべてリセット</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  title: 'バス1号車 乗車チェックリスト',
+  persons: [],  // {id, group, name}
+  checks: {}    // {id: {t: 'HH:MM'}}
+};
+
+// ============================================================
+// URL ENCODE/DECODE
+// ============================================================
+function enc(obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+function dec(s)   { return JSON.parse(decodeURIComponent(escape(atob(s)))); }
+
+function buildUrl() {
+  const d = {
+    t: state.title,
+    p: state.persons.map(p => [p.group, p.name]),
+    c: state.persons.map(p => state.checks[p.id] ? (state.checks[p.id].t || '1') : '')
+  };
+  return location.href.split('?')[0].split('#')[0] + '#' + enc(d);
+}
+
+function saveUrl() { history.replaceState(null, '', buildUrl()); }
+
+function loadUrl() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  try {
+    const d = dec(hash);
+    state.title = d.t || state.title;
+    state.persons = (d.p || []).map((pp, i) => ({ id: 'p' + i, group: pp[0]||'', name: pp[1]||'' }));
+    state.checks = {};
+    (d.c || []).forEach((t, i) => {
+      if (t) state.checks['p'+i] = { t: t === '1' ? '' : t };
+    });
+  } catch(e) { console.warn(e); }
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderAll() {
+  document.getElementById('mainTitle').textContent = state.title;
+  document.getElementById('titleInput').value = state.title;
+
+  const total = state.persons.length;
+  const checked = state.persons.filter(p => state.checks[p.id]).length;
+  document.getElementById('totalN').textContent = total;
+  document.getElementById('checkedN').textContent = checked;
+  document.getElementById('progFill').style.width = total > 0 ? (checked/total*100)+'%' : '0%';
+  document.getElementById('headerSub').textContent = `参加者 ${total}名 ・ 乗車済み ${checked}名`;
+
+  renderCheckLists();
+  renderPersonList();
+  updateShareUrl();
+}
+
+function renderCheckLists() {
+  const pending = state.persons.filter(p => !state.checks[p.id]);
+  const checked = state.persons.filter(p =>  state.checks[p.id]);
+
+  document.getElementById('pendingList').innerHTML = pending.length
+    ? pending.map(itemHtml).join('')
+    : (state.persons.length === 0 ? `<div class="empty"><span class="ico">📋</span>「名簿管理」タブから<br>参加者を登録してください</div>` : '');
+
+  const sec = document.getElementById('checkedSection');
+  if (checked.length > 0) {
+    sec.style.display = 'block';
+    document.getElementById('checkedList').innerHTML = checked.map(itemHtml).join('');
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function itemHtml(p) {
+  const chk = state.checks[p.id];
+  const isChk = !!chk;
+  const time = chk && chk.t ? chk.t : '';
+  return `<div class="check-item${isChk?' checked':''}" onclick="toggle('${p.id}')">
+    <div class="chk-circle">${isChk?'✓':''}</div>
+    <div class="chk-group">${x(p.group)}</div>
+    <div class="chk-name">${x(p.name)}</div>
+    <div class="chk-time">${time}</div>
+  </div>`;
+}
+
+function renderPersonList() {
+  const el = document.getElementById('personList');
+  if (!state.persons.length) {
+    el.innerHTML = `<div class="empty" style="padding:12px 0;"><span class="ico">👤</span>まだ登録されていません</div>`;
+    return;
+  }
+  el.innerHTML = state.persons.map((p,i) =>
+    `<div class="person-row">
+      <span class="num">${i+1}</span>
+      <span class="grp">${x(p.group)}</span>
+      <span class="nm">${x(p.name)}</span>
+      <button class="btn btn-del" onclick="removePerson('${p.id}')">削除</button>
+    </div>`
+  ).join('');
+}
+
+function updateShareUrl() {
+  const el = document.getElementById('shareUrl');
+  el.textContent = state.persons.length ? buildUrl() : '（参加者を追加するとURLが生成されます）';
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function setMode(m) {
+  const isCheck = m === 'check';
+  document.getElementById('checkView').style.display  = isCheck ? 'block' : 'none';
+  document.getElementById('adminView').style.display  = isCheck ? 'none'  : 'block';
+  document.getElementById('btnCheck').classList.toggle('active', isCheck);
+  document.getElementById('btnAdmin').classList.toggle('active', !isCheck);
+}
+
+function toggle(id) {
+  if (state.checks[id]) { delete state.checks[id]; }
+  else {
+    const now = new Date();
+    const hm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    state.checks[id] = { t: hm };
+  }
+  saveUrl(); renderAll();
+}
+
+function addPerson() {
+  const group = document.getElementById('groupInput').value.trim();
+  const name  = document.getElementById('nameInput').value.trim();
+  if (!name) { toast('名前を入力してください'); return; }
+  state.persons.push({ id: 'p'+Date.now(), group, name });
+  document.getElementById('nameInput').value = '';
+  saveUrl(); renderAll();
+  toast(`「${name}」を追加しました`);
+}
+
+function removePerson(id) {
+  const p = state.persons.find(pp => pp.id === id);
+  if (!confirm(`「${p?p.name:''}」を削除しますか？`)) return;
+  state.persons = state.persons.filter(pp => pp.id !== id);
+  delete state.checks[id];
+  saveUrl(); renderAll();
+  toast('削除しました');
+}
+
+function saveTitle() {
+  const v = document.getElementById('titleInput').value.trim();
+  if (!v) { toast('タイトルを入力してください'); return; }
+  state.title = v;
+  saveUrl(); renderAll();
+  toast('タイトルを保存しました');
+}
+
+function bulkImport() {
+  const raw = document.getElementById('bulkInput').value.trim();
+  if (!raw) { toast('テキストを入力してください'); return; }
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  let added = 0, skipped = 0;
+  lines.forEach(line => {
+    // Support comma, tab, or space-padded comma as separator
+    const sep = line.includes(',') ? ',' : line.includes('\t') ? '\t' : null;
+    let group = '', name = '';
+    if (sep) {
+      const parts = line.split(sep);
+      group = parts[0].trim();
+      name  = parts.slice(1).join(sep).trim();
+    } else {
+      name = line.trim();
+    }
+    if (!name) { skipped++; return; }
+    state.persons.push({ id: 'p' + Date.now() + Math.random(), group, name });
+    added++;
+  });
+  document.getElementById('bulkInput').value = '';
+  document.getElementById('bulkPreviewCount').innerHTML = '';
+  saveUrl(); renderAll();
+  toast(`✅ ${added}名を登録しました${skipped > 0 ? '（' + skipped + '行スキップ）' : ''}`);
+}
+
+// Live preview count on bulk textarea
+document.getElementById('bulkInput').addEventListener('input', function() {
+  const lines = this.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const el = document.getElementById('bulkPreviewCount');
+  el.innerHTML = lines.length > 0 ? `<b>${lines.length}</b> 名分を検出中` : '';
+});
+
+function resetChecks() {
+  if (!confirm('チェックをすべてリセットしますか？')) return;
+  state.checks = {};
+  saveUrl(); renderAll();
+  toast('リセットしました');
+}
+
+function copyUrl() {
+  navigator.clipboard.writeText(buildUrl())
+    .then(() => toast('✅ URLをコピーしました！'))
+    .catch(() => toast('手動でURLをコピーしてください'));
+}
+
+// ============================================================
+// UTIL
+// ============================================================
+function x(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2300);
+}
+document.getElementById('nameInput').addEventListener('keydown',  e => { if(e.key==='Enter') addPerson(); });
+document.getElementById('groupInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('nameInput').focus(); });
+document.getElementById('titleInput').addEventListener('keydown', e => { if(e.key==='Enter') saveTitle(); });
+
+loadUrl(); setMode('check'); renderAll();
+</script>
+</body>
+</html>
